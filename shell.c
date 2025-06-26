@@ -52,6 +52,11 @@ int main(int argc, char *argv[])
 		{
 			break;
 		}
+		if (strcmp(command, "/bin/ls") != 0)
+		{
+			printf("./shell: No such file or directory\n");
+			continue;
+		}
 		execute(command, Time_limit);
 	}
 	return (0);
@@ -75,6 +80,7 @@ void execute(char *command, int Time_limit)
 	{
 		return;
 	}
+
 	child_pid = fork();
 
 	if (child_pid < 0)
@@ -85,11 +91,9 @@ void execute(char *command, int Time_limit)
 
 	if (child_pid == 0)
 	{
-		char *args[2];
+		char *args[] = {"/bin/ls", NULL};
 
-		args[0] = command;
-		args[1] = NULL;
-		execvp(command, args);
+		execv("/bin/ls", args);
 		perror("./shell");
 		exit(EXIT_FAILURE);
 	}
