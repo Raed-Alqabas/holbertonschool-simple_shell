@@ -145,7 +145,7 @@ void execute(char *command, int Time_limit)
 					printf("Child process timed out and was terminated\n");
 					break;
 				}
-				sleep(1);
+
 			}
 			else
 				break;
