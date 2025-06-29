@@ -48,7 +48,8 @@ int main(int argc, char *argv[])
 		{
 			break;
 		}
-		if (!strcmp(command, "quit\n"))
+		command[strcspn(command, "\n")] = '\0';
+		if (!strcmp(command, "quit"))
 		{
 			break;
 		}
