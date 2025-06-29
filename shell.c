@@ -8,6 +8,7 @@
 #define default_time_limit 5
 void execute(char *command, int Time_limit);
 void handle_alarm(int sig);
+extern char **environ;
 /**
  * get_child_pid - Accessor for child PID (used by signal handler)
  * @pid: Set a new child PID if not -1
@@ -94,7 +95,7 @@ void execute(char *command, int Time_limit)
 	{
 		char *args[] = {"/bin/ls", NULL};
 
-		execv("/bin/ls", args);
+		execve("/bin/ls", args, environ);
 		perror("./shell");
 		exit(EXIT_FAILURE);
 	}
