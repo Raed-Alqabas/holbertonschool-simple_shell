@@ -5,9 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 #define default_time_limit 5
 void execute(char *command, int Time_limit);
-void handle_alarm(int sig);
+ssize_t read_line(char *buf, size_t size);
 extern char **environ;
 /**
  * get_child_pid - Accessor for child PID (used by signal handler)
@@ -45,7 +46,8 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		printf("#cisfun$ ");
-		if (!fgets(command, sizeof(command), stdin))
+		fflush(stdout);
+		if (!read_line(command, sizeof(command)))
 		{
 			break;
 		}
@@ -65,6 +67,30 @@ int main(int argc, char *argv[])
 }
 
 /**
+ * read_line - Reads a line from stdin using read()
+ * @buf: Buffer to store input
+ * @size: Size of the buffer
+ *
+ * Return: Number of bytes read, or -1 on failure
+ */
+ssize_t read_line(char *buf, size_t size)
+{
+	ssize_t n = read(STDIN_FILENO, buf, size -1);
+	char *newline;
+
+	if (n > 0)
+	{
+		buf[n] = '\0';
+		newline = strchr(buf, '\n');
+		if (newline)
+			*newline = '\0';
+
+	}
+
+	return (n);
+}
+
+/**
  * execute - Forks and executes a single-word command with a timeout
  * @command: The command to execute (e.g. "ls", "date")
  * @Time_limit: Time limit in seconds before killing the child process
@@ -75,7 +101,9 @@ void execute(char *command, int Time_limit)
 {
 	int status;
 	pid_t child_pid;
+	time_t start;
 
+	start = time(NULL);
 	command[strcspn(command, "\n")] = '\0';
 
 	if (strlen(command) == 0)
@@ -101,28 +129,27 @@ void execute(char *command, int Time_limit)
 	}
 	else
 	{
-		get_child_pid(child_pid);
-		signal(SIGALRM, handle_alarm);
-		alarm(Time_limit);
-		waitpid(child_pid, &status, 0);
-		alarm(0);
-	}
-}
+		while (1)
+		{
+			pid_t result = waitpid(child_pid, &status, WNOHANG);
+			if (result == -1)
+			{
+				perror("waitpid");
+				break;
+			}
+			else if (result == 0)
+			{
+				if (time(NULL) - start >= Time_limit)
+				{
+					kill(child_pid, SIGKILL);
+					printf("Child process timed out and was terminated\n");
+					break;
+				}
+				sleep(1);
+			}
+			else
+				break;
 
-/**
- * handle_alarm - Signal handler for SIGALRM
- * @sig: The signal number (unused)
- *
- * Description: Called when the alarm times out; kills the child process
- * Return: void
- */
-void handle_alarm(int sig __attribute__((unused)))
-{
-	pid_t child_pid = get_child_pid(-1);
-
-	if (child_pid > 0)
-	{
-		kill(child_pid, SIGKILL);
-		printf("Child process timed out and was terminated\n");
+		}
 	}
 }
