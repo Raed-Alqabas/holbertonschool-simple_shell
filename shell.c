@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 	}
 	while (1)
 	{
-		printf("#cisfun$ ");
+		write(STDOUT_FILENO, "#cisfun$ ", 9);
 		if (!read_line(command, sizeof(command)))
 		{
 			break;
@@ -120,9 +120,11 @@ void execute(char *command, int Time_limit)
 
 	if (child_pid == 0)
 	{
-		char *args[] = {"/bin/ls", NULL};
+		char *args[2];
 
-		execve("/bin/ls", args, environ);
+		args[0] = command;
+		args[1] = NULL;
+		execve(command, args, environ);
 		perror("./shell");
 		exit(EXIT_FAILURE);
 	}
