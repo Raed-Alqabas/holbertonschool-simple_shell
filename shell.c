@@ -46,7 +46,6 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		printf("#cisfun$ ");
-		fflush(stdout);
 		if (!read_line(command, sizeof(command)))
 		{
 			break;
