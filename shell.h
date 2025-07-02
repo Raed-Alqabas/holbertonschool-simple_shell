@@ -22,4 +22,8 @@ void print_env(void);
 void free_args(char **args);
 char *_getenv(const char *name);
 
+
+void prompt(void);
+int handle_builtin(char **args);
+
 #endif
