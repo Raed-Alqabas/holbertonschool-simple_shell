@@ -15,8 +15,7 @@ int execute(char **args, char *argv, __attribute__((unused)) int cmd_count)
 	if (!args[0])
 		return (1);
 
-	/* Reject anything that is not exactly "/bin/ls" */
-	if (strcmp(args[0], "/bin/ls") != 0)
+	if (access(args[0], X_OK) != 0)
 	{
 		fprintf(stderr, "%s: No such file or directory\n",
 		        argv);
@@ -27,7 +26,7 @@ int execute(char **args, char *argv, __attribute__((unused)) int cmd_count)
 	if (pid == 0)
 	{
 		execve(args[0], args, environ);
-		perror("execve"); /* Should only fail if /bin/ls is somehow broken */
+		perror("execve");
 		exit(EXIT_FAILURE);
 	}
 	else if (pid < 0)
