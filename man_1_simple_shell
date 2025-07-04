@@ -1,0 +1,60 @@
+.TH hsh 1 "June 2025" "1.0" "User Commands"
+.SH NAME
+hsh \- simple UNIX command line interpreter
+.SH SYNOPSIS
+.B hsh
+.SH DESCRIPTION
+.B hsh
+is a simple UNIX shell program that reads and executes commands from standard input.
+
+It supports basic functionality similar to traditional shells but with limited features:
+.TP
+\fBFeatures:\fR
+- Displays a prompt and waits for user input.
+- Executes commands found in the \fBPATH\fR environment variable.
+- Supports built-in \fBexit\fR to quit the shell.
+- Supports built-in \fBenv\fR to display the environment.
+- Handles command execution via \fBexecve\fR system call.
+- Handles Ctrl+D (EOF) to exit gracefully.
+
+.SH USAGE
+.TP
+Once running, the shell waits for a command input:
+.EX
+$ ./hsh
+#cisfun$ ls
+file1.c  file2.c
+#cisfun$ exit
+.EE
+
+.SH LIMITATIONS
+- No support for arguments with commands (in minimal versions).
+- No support for pipes (|), redirection (> or <), semicolons (;), or chaining.
+- Does not support environment variable expansion.
+- No support for advanced shell scripting features.
+
+.SH AUTHOR
+Written by Ry-88 and Raed-Alqabas.
+
+.SH FILES
+.TP
+.B shell.c
+Main shell loop and logic.
+.TP
+.B execute.c
+Command parsing and execution.
+.TP
+.B read_line.c
+Input reading and cleanup.
+.TP
+.B find_path.c
+Looks up commands using PATH.
+.TP
+.B shell.h
+Function declarations and macros.
+
+.SH SEE ALSO
+.BR sh (1),
+.BR bash (1),
+.BR execve (2),
+.BR getenv (3)
