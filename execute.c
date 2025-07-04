@@ -1,48 +1,89 @@
 #include "shell.h"
 
 /**
- * execute - Executes only the ls command (as /bin/ls)
- * @args: array of command and arguments
- * @argv: program name (argv[0])
- * @cmd_count: command number (used in error messages)
- * Return: 1 to continue shell loop
+ * execute_command - Parses and executes a command line
+ * @line: The input line to parse and execute
+ * Return: Status code
  */
-int execute(char **args, char *argv, __attribute__((unused)) int cmd_count)
+int execute_command(char *line)
 {
-	pid_t pid;
-	int status;
-	char *ls_path = "/bin/ls";
+	pid_t child_pid;
+	int exit_status, arg_index = 0, env_index = 0;
+	char *args[64], *token, *cmd_path;
 
-	if (!args[0])
-		return (1);
+	token = strtok(line, " \t\n");
+	if (token == NULL)
+		return (0);
 
-	/* Replace "ls" with "/bin/ls" to execute it correctly */
-	if (strcmp(args[0], "ls") == 0)
-		args[0] = ls_path;
-
-	/* Allow only /bin/ls */
-	if (strcmp(args[0], ls_path) != 0)
+	while (token != NULL && arg_index < 63)
 	{
-		fprintf(stderr, "%s: No such file or directory\n", argv);
-		return (1);
+		args[arg_index++] = token;
+		token = strtok(NULL, " \t\n");
+	}
+	args[arg_index] = NULL;
+
+	if (strcmp(args[0], "exit") == 0)
+		exit(0);
+
+	if (strcmp(args[0], "env") == 0)
+	{
+		while (environ[env_index])
+		{
+			write(STDOUT_FILENO, environ[env_index], strlen(environ[env_index]));
+			write(STDOUT_FILENO, "\n", 1);
+			env_index++;
+		}
+		return (0);
 	}
 
-	pid = fork();
-	if (pid == 0)
+	if (strchr(args[0], '/'))
+		cmd_path = args[0];
+	else
 	{
-		execve(args[0], args, environ);
-		perror(argv);
-		exit(EXIT_FAILURE);
+		cmd_path = find_path(args[0]);
+		if (!cmd_path)
+		{
+			fprintf(stderr, "./hsh: 1: %s: not found\n", args[0]);
+			return (127);
+		}
 	}
-	else if (pid < 0)
+
+	if (access(cmd_path, X_OK) != 0)
+	{
+		fprintf(stderr, "./hsh: 1: %s: not found\n", args[0]);
+		if (cmd_path != args[0])
+			free(cmd_path);
+		return (127);
+	}
+
+	child_pid = fork();
+	if (child_pid == -1)
 	{
 		perror("fork");
+		if (cmd_path != args[0])
+			free(cmd_path);
 		return (1);
+	}
+
+	if (child_pid == 0)
+	{
+		if (execve(cmd_path, args, environ) == -1)
+		{
+			fprintf(stderr, "./hsh: 1: %s: not found\n", args[0]);
+			exit(127);
+		}
 	}
 	else
 	{
-		waitpid(pid, &status, 0);
+		wait(&exit_status);
+		if (cmd_path != args[0])
+			free(cmd_path);
+
+		if (WIFEXITED(exit_status))
+			return (WEXITSTATUS(exit_status));
+		else
+			return (1);
 	}
 
-	return (1);
+	return (0);
 }

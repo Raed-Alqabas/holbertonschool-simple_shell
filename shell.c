@@ -1,46 +1,40 @@
 #include "shell.h"
 
 /**
- * main - Entry point for a simple shell program
- * @argc: Argument count (unused)
- * @argv: Argument vector; argv[0] is the program name
+ * main - The entry point of the shell.
  *
- * Return: Always 0 (Success)
+ * Return: Exit status
  */
-
-int main(int argc, char **argv)
+int main(void)
 {
-	char *line = NULL;
-	char **args = NULL;
-	int status = 1;
-	int cmd_count = 0;
-	(void)argc;
+	char *input_line;
+	int exit_status = 0;
+	int is_interactive = isatty(STDIN_FILENO);
 
-	do {
-		if (isatty(STDIN_FILENO))
-			printf("($) ");
-		line = read_line();
-		if (!line)
+	while (1)
+	{
+		if (is_interactive)
+			display_prompt();
+
+		input_line = read_input();
+		if (input_line == NULL)
+		{
+			if (is_interactive)
+				write(STDOUT_FILENO, "\n", 1);
 			break;
-		cmd_count++;
-		args = split_line(line);
-		if (args[0])
-			status = execute(args, argv[0], cmd_count);
-		free(line);
-		free_args(args);
-	} while (status);
-	return (0);
-}
+		}
 
-/**
- * free_args - frees the memory
- * @args: the array to free
- * Return: nothing
- */
-void free_args(char **args)
-{
-	int i = 0;
-	while (args[i])
-		free(args[i++]);
-	free(args);
+		if (input_line[0] != '\0')
+		{
+			if (strncmp(input_line, "exit", 4) == 0 &&
+			    (input_line[4] == '\n' || input_line[4] == '\0' || input_line[4] == ' '))
+			{
+				free(input_line);
+				break;
+			}
+			exit_status = execute_command(input_line);
+		}
+		free(input_line);
+	}
+	return (exit_status);
 }

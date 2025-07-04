@@ -1,54 +1,56 @@
 #include "shell.h"
 
 /**
- * find_path - Finds the full path of a command using PATH environment variable
- * @cmd: The command name to search for
+ * _getenv - Get the environment variable value
+ * @var_name: The variable name to search
  *
- * Return: Full path if found, NULL otherwise
+ * Return: Pointer to value or NULL
  */
-char *find_path(char *cmd)
+char *_getenv(const char *var_name)
 {
-    char *env_path, *env_path_dup, *directory;
-    char constructed_path[1024];
-    struct stat file_info;
+	int index;
+	size_t name_len = strlen(var_name);
 
-    if (!cmd)
-        return (NULL);
+	for (index = 0; environ[index]; index++)
+	{
+		if (strncmp(environ[index], var_name, name_len) == 0 &&
+		    environ[index][name_len] == '=')
+			return (environ[index] + name_len + 1);
+	}
+	return (NULL);
+}
 
-    /* Check if command is already a path (absolute or relative) */
-    if (cmd[0] == '/' || strncmp(cmd, "./", 2) == 0 || strncmp(cmd, "../", 3) == 0)
-    {
-        if (stat(cmd, &file_info) == 0)
-            return (strdup(cmd));
-        else
-            return (NULL);
-    }
+/**
+ * find_in_path - Searches for a command in PATH
+ * @cmd_name: Command to search
+ *
+ * Return: Full path if found and executable, NULL otherwise
+ */
+char *find_path(const char *cmd_name)
+{
+	char *path_value = _getenv("PATH");
+	char *path_copy, *current_dir;
+	char path_candidate[1024];
 
-    env_path = _getenv("PATH");
-    if (!env_path || env_path[0] == '\0')
-        return (NULL);
+	if (path_value == NULL || *path_value == '\0')
+		return (NULL);
 
-    env_path_dup = strdup(env_path);
-    if (!env_path_dup)
-        return (NULL);
+	path_copy = strdup(path_value);
+	if (!path_copy)
+		return (NULL);
 
-    directory = strtok(env_path_dup, ":");
-    while (directory)
-    {
-        if (strlen(directory) == 0)
-            snprintf(constructed_path, sizeof(constructed_path), "./%s", cmd);
-        else
-            snprintf(constructed_path, sizeof(constructed_path), "%s/%s", directory, cmd);
+	current_dir = strtok(path_copy, ":");
+	while (current_dir != NULL)
+	{
+		snprintf(path_candidate, sizeof(path_candidate), "%s/%s", current_dir, cmd_name);
+		if (access(path_candidate, X_OK) == 0)
+		{
+			free(path_copy);
+			return (strdup(path_candidate));
+		}
+		current_dir = strtok(NULL, ":");
+	}
 
-        if (stat(constructed_path, &file_info) == 0)
-        {
-            free(env_path_dup);
-            return (strdup(constructed_path));
-        }
-
-        directory = strtok(NULL, ":");
-    }
-
-    free(env_path_dup);
-    return (NULL);
+	free(path_copy);
+	return (NULL);
 }
